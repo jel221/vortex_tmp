@@ -84,8 +84,13 @@ module VX_scoreboard import VX_gpu_pkg::*; #(
                            && writeback_if.data.eop;
 
         wire [NUM_OPDS-1:0] [NUM_REGS_BITS-1:0] ibf_opds, stg_opds;
+`ifdef TCU_SYM_SPARSE_ENABLE
+        assign ibf_opds = {ibuffer_if[w].data.rs4, ibuffer_if[w].data.rs3, ibuffer_if[w].data.rs2, ibuffer_if[w].data.rs1, ibuffer_if[w].data.rd};
+        assign stg_opds = {staging_if[w].data.rs4, staging_if[w].data.rs3, staging_if[w].data.rs2, staging_if[w].data.rs1, staging_if[w].data.rd};
+`else
         assign ibf_opds = {ibuffer_if[w].data.rs3, ibuffer_if[w].data.rs2, ibuffer_if[w].data.rs1, ibuffer_if[w].data.rd};
         assign stg_opds = {staging_if[w].data.rs3, staging_if[w].data.rs2, staging_if[w].data.rs1, staging_if[w].data.rd};
+`endif
 
         wire [NUM_OPDS-1:0] ibf_used_rs = {ibuffer_if[w].data.used_rs, ibuffer_if[w].data.wb};
         wire [NUM_OPDS-1:0] stg_used_rs = {staging_if[w].data.used_rs, staging_if[w].data.wb};
@@ -122,8 +127,13 @@ module VX_scoreboard import VX_gpu_pkg::*; #(
 
         wire [REG_TYPES-1:0][RV_REGS-1:0] in_use_mask;
         for (genvar i = 0; i < REG_TYPES; ++i) begin : g_in_use_mask
+`ifdef TCU_SYM_SPARSE_ENABLE
+            wire [RV_REGS-1:0] ibf_reg_mask = ibf_opd_mask[0][i] | ibf_opd_mask[1][i] | ibf_opd_mask[2][i] | ibf_opd_mask[3][i] | ibf_opd_mask[4][i];
+            wire [RV_REGS-1:0] stg_reg_mask = stg_opd_mask[0][i] | stg_opd_mask[1][i] | stg_opd_mask[2][i] | stg_opd_mask[3][i] | stg_opd_mask[4][i];
+`else
             wire [RV_REGS-1:0] ibf_reg_mask = ibf_opd_mask[0][i] | ibf_opd_mask[1][i] | ibf_opd_mask[2][i] | ibf_opd_mask[3][i];
             wire [RV_REGS-1:0] stg_reg_mask = stg_opd_mask[0][i] | stg_opd_mask[1][i] | stg_opd_mask[2][i] | stg_opd_mask[3][i];
+`endif
             wire [RV_REGS-1:0] regs_mask = ibuffer_fire ? ibf_reg_mask : stg_reg_mask;
             assign in_use_mask[i] = inuse_regs_n[i * RV_REGS +: RV_REGS] & regs_mask;
         end
@@ -213,7 +223,12 @@ module VX_scoreboard import VX_gpu_pkg::*; #(
             staging_if[w].data.bytesel,
             staging_if[w].data.rs1,
             staging_if[w].data.rs2,
+`ifdef TCU_SYM_SPARSE_ENABLE
+            staging_if[w].data.rs3,
+            staging_if[w].data.rs4
+`else
             staging_if[w].data.rs3
+`endif
         };
         assign staging_if[w].ready = arb_ready_in[w] && operands_ready[w];
     end
@@ -243,7 +258,12 @@ module VX_scoreboard import VX_gpu_pkg::*; #(
             scoreboard_if.data.bytesel,
             scoreboard_if.data.rs1,
             scoreboard_if.data.rs2,
+`ifdef TCU_SYM_SPARSE_ENABLE
+            scoreboard_if.data.rs3,
+            scoreboard_if.data.rs4
+`else
             scoreboard_if.data.rs3
+`endif
         }),
         .valid_out (scoreboard_if.valid),
         .ready_out (scoreboard_if.ready),

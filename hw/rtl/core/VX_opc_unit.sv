@@ -32,6 +32,9 @@ module VX_opc_unit import VX_gpu_pkg::*; #(
 
 `ifdef PERF_ENABLE
     output wire [PERF_CTR_BITS-1:0] perf_stalls,
+`ifdef EXT_TCU_ENABLE
+    output wire [PERF_CTR_BITS-1:0] perf_tcu_opd_stalls,
+`endif
 `endif
 
     VX_writeback_if.slave   writeback_if,
@@ -84,7 +87,11 @@ module VX_opc_unit import VX_gpu_pkg::*; #(
     wire has_collision_st1;
 
     wire [NUM_SRC_OPDS-1:0][NUM_REGS_BITS-1:0] src_regs;
+`ifdef TCU_SYM_SPARSE_ENABLE
+    assign src_regs = {scoreboard_if.data.rs4, scoreboard_if.data.rs3, scoreboard_if.data.rs2, scoreboard_if.data.rs1};
+`else
     assign src_regs = {scoreboard_if.data.rs3, scoreboard_if.data.rs2, scoreboard_if.data.rs1};
+`endif
 
     for (genvar i = 0; i < NUM_SRC_OPDS; ++i) begin : g_gpr_rd_reg
         assign req_addr_in[i] = src_regs[i][NUM_REGS_BITS-1 -: REG_REM_BITS];
@@ -326,6 +333,9 @@ module VX_opc_unit import VX_gpu_pkg::*; #(
             operands_if.data.op_args,
             operands_if.data.rd,
             operands_if.data.bytesel,
+`ifdef TCU_SYM_SPARSE_ENABLE
+            operands_if.data.rs4_data,
+`endif
             operands_if.data.rs3_data,
             operands_if.data.rs2_data,
             operands_if.data.rs1_data,
@@ -346,6 +356,19 @@ module VX_opc_unit import VX_gpu_pkg::*; #(
         end
     end
     assign perf_stalls = collisions_r;
+`ifdef EXT_TCU_ENABLE
+    reg [PERF_CTR_BITS-1:0] tcu_opd_stalls_r;
+    always @(posedge clk) begin
+        if (reset) begin
+            tcu_opd_stalls_r <= '0;
+        end else begin
+            if (scoreboard_if.valid && pipe_ready_in && has_collision && (scoreboard_if.data.ex_type == EX_TCU)) begin
+                tcu_opd_stalls_r <= tcu_opd_stalls_r + PERF_CTR_BITS'(1);
+            end
+        end
+    end
+    assign perf_tcu_opd_stalls = tcu_opd_stalls_r;
+`endif
 `endif
 
 endmodule

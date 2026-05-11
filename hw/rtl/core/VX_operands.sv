@@ -22,6 +22,9 @@ module VX_operands import VX_gpu_pkg::*; #(
 
 `ifdef PERF_ENABLE
     output wire [PERF_CTR_BITS-1:0] perf_stalls,
+`ifdef EXT_TCU_ENABLE
+    output wire [PERF_CTR_BITS-1:0] perf_tcu_opd_stalls,
+`endif
 `endif
 
     VX_writeback_if.slave   writeback_if,
@@ -38,6 +41,9 @@ module VX_operands import VX_gpu_pkg::*; #(
 
 `ifdef PERF_ENABLE
     wire [`NUM_OPCS-1:0][PERF_CTR_BITS-1:0] per_opc_perf_stalls;
+`ifdef EXT_TCU_ENABLE
+    wire [`NUM_OPCS-1:0][PERF_CTR_BITS-1:0] per_opc_perf_tcu_opd_stalls;
+`endif
 `endif
 
     VX_operands_if per_opc_operands_if[`NUM_OPCS]();
@@ -75,6 +81,9 @@ module VX_operands import VX_gpu_pkg::*; #(
             .reset        (reset),
         `ifdef PERF_ENABLE
             .perf_stalls  (per_opc_perf_stalls[i]),
+        `ifdef EXT_TCU_ENABLE
+            .perf_tcu_opd_stalls (per_opc_perf_tcu_opd_stalls[i]),
+        `endif
         `endif
             .writeback_if (opc_writeback_if),
             .scoreboard_if(opc_scoreboard_if),
@@ -114,6 +123,18 @@ module VX_operands import VX_gpu_pkg::*; #(
         .data_out (perf_stalls_w)
     );
     `BUFFER(perf_stalls, perf_stalls_w);
+`ifdef EXT_TCU_ENABLE
+    wire [PERF_CTR_BITS-1:0] perf_tcu_opd_stalls_w;
+    VX_reduce_tree #(
+        .IN_W (PERF_CTR_BITS),
+        .N    (`NUM_OPCS),
+        .OP   ("+")
+    ) perf_tcu_opd_stalls_reduce (
+        .data_in  (per_opc_perf_tcu_opd_stalls),
+        .data_out (perf_tcu_opd_stalls_w)
+    );
+    `BUFFER(perf_tcu_opd_stalls, perf_tcu_opd_stalls_w);
+`endif
 `endif
 
 endmodule

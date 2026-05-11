@@ -64,7 +64,8 @@ module VX_ibuffer import VX_gpu_pkg::*; #(
                 decode_if.data.bytesel,
                 decode_if.data.rs1,
                 decode_if.data.rs2,
-                decode_if.data.rs3
+                decode_if.data.rs3`ifdef TCU_SYM_SPARSE_ENABLE,
+                decode_if.data.rs4`endif
             }),
             .ready_in (ibuf_ready_in[w]),
             .valid_out(ibuffer_tmp_if.valid),

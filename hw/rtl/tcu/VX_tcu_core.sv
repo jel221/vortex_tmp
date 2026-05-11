@@ -86,6 +86,9 @@ module VX_tcu_core import VX_gpu_pkg::*, VX_tcu_pkg::*; #(
 
     wire [TCU_BLOCK_CAP-1:0][`XLEN-1:0] rs1_data;
     wire [TCU_BLOCK_CAP-1:0][`XLEN-1:0] rs2_data;
+`ifdef TCU_SYM_SPARSE_ENABLE
+    wire [TCU_BLOCK_CAP-1:0][`XLEN-1:0] rs4_data = execute_if.data.rs4_data;
+`endif
 
 `ifdef TCU_WGMMA_ENABLE
     wire is_wgmma = (execute_if.data.op_type == INST_TCU_WGMMA);
@@ -248,19 +251,48 @@ module VX_tcu_core import VX_gpu_pkg::*, VX_tcu_pkg::*; #(
                 assign b_col_dense[k_idx] = 32'(rs2_data[b_off + j * TCU_TC_K + k_idx]);
                 // WGMMA_SP: tbuf_rs2_data is wide (TCU_WG_RS2_WIDTH lanes);
                 //   use j directly — gather already placed each column's pair at j*tcK*2.
-                // WMMA_SP: rs2_data comes from the register file (TCU_BLOCK_CAP lanes);
-                //   SYM_SPARSE folds j to the packed column-pair layout.
-                localparam J_SP = SYM_SPARSE ? (j % (TCU_TC_N / 2)) : j;
+                // WMMA_SP: J_LO indexes within the column-pair block.
+                //   SYM_SPARSE hi columns (j >= tcN/2) read from rs4_data instead of rs2_data.
+                localparam J_LO   = SYM_SPARSE ? (j % (TCU_TC_N / 2)) : j;
+            `ifdef TCU_SYM_SPARSE_ENABLE
+                localparam USE_RS4 = (j >= (TCU_TC_N / 2));
+                if (USE_RS4) begin : g_b_hi
+            `ifdef TCU_WGMMA_ENABLE
+                    assign b_col_1[k_idx] = 32'(is_wgmma
+                        ? tbuf_rs2_data[j * TCU_TC_K * 2 + k_idx * 2]
+                        : rs4_data[b_off + J_LO * TCU_TC_K * 2 + k_idx * 2]);
+                    assign b_col_2[k_idx] = 32'(is_wgmma
+                        ? tbuf_rs2_data[j * TCU_TC_K * 2 + k_idx * 2 + 1]
+                        : rs4_data[b_off + J_LO * TCU_TC_K * 2 + k_idx * 2 + 1]);
+            `else
+                    assign b_col_1[k_idx] = 32'(rs4_data[b_off + J_LO * TCU_TC_K * 2 + k_idx * 2]);
+                    assign b_col_2[k_idx] = 32'(rs4_data[b_off + J_LO * TCU_TC_K * 2 + k_idx * 2 + 1]);
+            `endif
+                end else begin : g_b_lo
+            `ifdef TCU_WGMMA_ENABLE
+                    assign b_col_1[k_idx] = 32'(is_wgmma
+                        ? tbuf_rs2_data[j * TCU_TC_K * 2 + k_idx * 2]
+                        : rs2_data[b_off + J_LO * TCU_TC_K * 2 + k_idx * 2]);
+                    assign b_col_2[k_idx] = 32'(is_wgmma
+                        ? tbuf_rs2_data[j * TCU_TC_K * 2 + k_idx * 2 + 1]
+                        : rs2_data[b_off + J_LO * TCU_TC_K * 2 + k_idx * 2 + 1]);
+            `else
+                    assign b_col_1[k_idx] = 32'(rs2_data[b_off + J_LO * TCU_TC_K * 2 + k_idx * 2]);
+                    assign b_col_2[k_idx] = 32'(rs2_data[b_off + J_LO * TCU_TC_K * 2 + k_idx * 2 + 1]);
+            `endif
+                end
+            `else
             `ifdef TCU_WGMMA_ENABLE
                 assign b_col_1[k_idx] = 32'(is_wgmma
                     ? tbuf_rs2_data[j * TCU_TC_K * 2 + k_idx * 2]
-                    : rs2_data[b_off + J_SP * TCU_TC_K * 2 + k_idx * 2]);
+                    : rs2_data[b_off + J_LO * TCU_TC_K * 2 + k_idx * 2]);
                 assign b_col_2[k_idx] = 32'(is_wgmma
                     ? tbuf_rs2_data[j * TCU_TC_K * 2 + k_idx * 2 + 1]
-                    : rs2_data[b_off + J_SP * TCU_TC_K * 2 + k_idx * 2 + 1]);
+                    : rs2_data[b_off + J_LO * TCU_TC_K * 2 + k_idx * 2 + 1]);
             `else
-                assign b_col_1[k_idx] = 32'(rs2_data[b_off + J_SP * TCU_TC_K * 2 + k_idx * 2]);
-                assign b_col_2[k_idx] = 32'(rs2_data[b_off + J_SP * TCU_TC_K * 2 + k_idx * 2 + 1]);
+                assign b_col_1[k_idx] = 32'(rs2_data[b_off + J_LO * TCU_TC_K * 2 + k_idx * 2]);
+                assign b_col_2[k_idx] = 32'(rs2_data[b_off + J_LO * TCU_TC_K * 2 + k_idx * 2 + 1]);
+            `endif
             `endif
             `else
                 assign b_col[k_idx] = 32'(rs2_data[b_off + j * TCU_TC_K + k_idx]);

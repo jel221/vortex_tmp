@@ -30,6 +30,9 @@ module VX_alu_int import VX_gpu_pkg::*; #(
 );
 
     `UNUSED_SPARAM (INSTANCE_ID)
+`ifdef TCU_SYM_SPARSE_ENABLE
+    `UNUSED_VAR (execute_if.data.rs4_data)
+`endif
 
     localparam LANE_BITS      = `CLOG2(NUM_LANES);
     localparam LANE_WIDTH     = `UP(LANE_BITS);

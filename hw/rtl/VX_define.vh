@@ -44,6 +44,9 @@
 `define __used_reg_rv_rs1 RV_RS1
 `define __used_reg_rv_rs2 RV_RS2
 `define __used_reg_rv_rs3 RV_RS3
+`ifdef TCU_SYM_SPARSE_ENABLE
+`define __used_reg_rv_rs4 RV_RS4
+`endif
 
 `define USED_REG(t, x, v) \
     reg_ids[`__used_reg_rv_``x]  = make_reg_num(REG_TYPE_BITS'(t), RV_REGS_BITS'(``x)); \
@@ -462,6 +465,9 @@
         logic [__lanes__-1:0][`XLEN-1:0] rs1_data; \
         logic [__lanes__-1:0][`XLEN-1:0] rs2_data; \
         logic [__lanes__-1:0][`XLEN-1:0] rs3_data; \
+`ifdef TCU_SYM_SPARSE_ENABLE \
+        logic [__lanes__-1:0][`XLEN-1:0] rs4_data; \
+`endif \
     } __name__``_execute_t; \
     typedef struct packed { \
         __name__``_header_t              header; \

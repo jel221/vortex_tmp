@@ -42,6 +42,9 @@ package VX_gpu_pkg;
     localparam RV_RS1 = 1;
     localparam RV_RS2 = 2;
     localparam RV_RS3 = 3;
+`ifdef TCU_SYM_SPARSE_ENABLE
+    localparam RV_RS4 = 4;
+`endif
 
     localparam REG_TYPE_I = 0;
     localparam REG_TYPE_F = 1;
@@ -113,7 +116,11 @@ package VX_gpu_pkg;
     endfunction
 `endif
 
+`ifdef TCU_SYM_SPARSE_ENABLE
+    localparam NUM_SRC_OPDS = 4;
+`else
     localparam NUM_SRC_OPDS = 3;
+`endif
     localparam SRC_OPD_BITS = `CLOG2(NUM_SRC_OPDS);
     localparam SRC_OPD_WIDTH = `UP(SRC_OPD_BITS);
 
@@ -683,6 +690,9 @@ package VX_gpu_pkg;
         logic [NUM_REGS_BITS-1:0]   rs1;
         logic [NUM_REGS_BITS-1:0]   rs2;
         logic [NUM_REGS_BITS-1:0]   rs3;
+`ifdef TCU_SYM_SPARSE_ENABLE
+        logic [NUM_REGS_BITS-1:0]   rs4;
+`endif
     } decode_t;
 
     typedef struct packed {
@@ -701,6 +711,9 @@ package VX_gpu_pkg;
         logic [NUM_REGS_BITS-1:0]   rs1;
         logic [NUM_REGS_BITS-1:0]   rs2;
         logic [NUM_REGS_BITS-1:0]   rs3;
+`ifdef TCU_SYM_SPARSE_ENABLE
+        logic [NUM_REGS_BITS-1:0]   rs4;
+`endif
     } ibuffer_t;
 
     typedef struct packed {
@@ -719,6 +732,9 @@ package VX_gpu_pkg;
         logic [NUM_REGS_BITS-1:0]   rs1;
         logic [NUM_REGS_BITS-1:0]   rs2;
         logic [NUM_REGS_BITS-1:0]   rs3;
+`ifdef TCU_SYM_SPARSE_ENABLE
+        logic [NUM_REGS_BITS-1:0]   rs4;
+`endif
     } scoreboard_t;
 
     typedef struct packed {
@@ -737,6 +753,9 @@ package VX_gpu_pkg;
         logic [`SIMD_WIDTH-1:0][`XLEN-1:0]  rs1_data;
         logic [`SIMD_WIDTH-1:0][`XLEN-1:0]  rs2_data;
         logic [`SIMD_WIDTH-1:0][`XLEN-1:0]  rs3_data;
+`ifdef TCU_SYM_SPARSE_ENABLE
+        logic [`SIMD_WIDTH-1:0][`XLEN-1:0]  rs4_data;
+`endif
         logic                               sop;
         logic                               eop;
     } operands_t;
@@ -757,6 +776,9 @@ package VX_gpu_pkg;
         logic [`SIMD_WIDTH-1:0][`XLEN-1:0]  rs1_data;
         logic [`SIMD_WIDTH-1:0][`XLEN-1:0]  rs2_data;
         logic [`SIMD_WIDTH-1:0][`XLEN-1:0]  rs3_data;
+`ifdef TCU_SYM_SPARSE_ENABLE
+        logic [`SIMD_WIDTH-1:0][`XLEN-1:0]  rs4_data;
+`endif
         logic                               sop;
         logic                               eop;
     } dispatch_t;
@@ -869,6 +891,9 @@ package VX_gpu_pkg;
         logic [PERF_CTR_BITS-1:0] ibf_stalls;
         logic [PERF_CTR_BITS-1:0] scb_stalls;
         logic [PERF_CTR_BITS-1:0] opd_stalls;
+`ifdef EXT_TCU_ENABLE
+        logic [PERF_CTR_BITS-1:0] tcu_opd_stalls;
+`endif
         logic [NUM_EX_UNITS-1:0][PERF_CTR_BITS-1:0] dispatch_stalls;
         logic [NUM_EX_UNITS-1:0][PERF_CTR_BITS-1:0] dispatch_instrs;
     } issue_perf_t;

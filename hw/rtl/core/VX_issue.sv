@@ -37,6 +37,9 @@ module VX_issue import VX_gpu_pkg::*; #(
     `PERF_COUNTER_ADD (issue_perf, per_issue_perf, ibf_stalls, PERF_CTR_BITS, `ISSUE_WIDTH, (`ISSUE_WIDTH > 2))
     `PERF_COUNTER_ADD (issue_perf, per_issue_perf, scb_stalls, PERF_CTR_BITS, `ISSUE_WIDTH, (`ISSUE_WIDTH > 2))
     `PERF_COUNTER_ADD (issue_perf, per_issue_perf, opd_stalls, PERF_CTR_BITS, `ISSUE_WIDTH, (`ISSUE_WIDTH > 2))
+`ifdef EXT_TCU_ENABLE
+    `PERF_COUNTER_ADD (issue_perf, per_issue_perf, tcu_opd_stalls, PERF_CTR_BITS, `ISSUE_WIDTH, (`ISSUE_WIDTH > 2))
+`endif
     for (genvar i = 0; i < NUM_EX_UNITS; ++i) begin : g_issue_perf_units_uses
         `PERF_COUNTER_ADD (issue_perf, per_issue_perf, dispatch_stalls[i], PERF_CTR_BITS, `ISSUE_WIDTH, (`ISSUE_WIDTH > 2))
         `PERF_COUNTER_ADD (issue_perf, per_issue_perf, dispatch_instrs[i], PERF_CTR_BITS, `ISSUE_WIDTH, (`ISSUE_WIDTH > 2))

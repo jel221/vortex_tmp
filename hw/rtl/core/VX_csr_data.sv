@@ -247,6 +247,7 @@ import VX_fpu_pkg::*;
                     `ifdef EXT_TCU_ENABLE
                         `CSR_READ_64(`VX_CSR_MPM_STALL_TCU, read_data_ro_w, pipeline_perf.issue.dispatch_stalls[EX_TCU]);
                         `CSR_READ_64(`VX_CSR_MPM_INSTR_TCU, read_data_ro_w, pipeline_perf.issue.dispatch_instrs[EX_TCU]);
+                        `CSR_READ_64(`VX_CSR_MPM_STALL_TCU_OPDS, read_data_ro_w, pipeline_perf.issue.tcu_opd_stalls);
                     `endif
                         // PERF: branches
                         `CSR_READ_64(`VX_CSR_MPM_BRANCHES, read_data_ro_w, pipeline_perf.sched.branches);

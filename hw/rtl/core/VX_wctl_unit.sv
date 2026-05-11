@@ -34,6 +34,9 @@ module VX_wctl_unit import VX_gpu_pkg::*; #(
     localparam WCTL_WIDTH = $bits(tmc_t) + $bits(wspawn_t) + $bits(split_t) + $bits(join_t) + $bits(barrier_t);
 
     `UNUSED_VAR (execute_if.data.rs3_data)
+`ifdef TCU_SYM_SPARSE_ENABLE
+    `UNUSED_VAR (execute_if.data.rs4_data)
+`endif
 
     tmc_t       tmc;
     wspawn_t    wspawn;
